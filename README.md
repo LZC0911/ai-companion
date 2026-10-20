@@ -167,4 +167,4 @@ MIT License — 自由使用、修改和分发。
 
 ---
 
-Made with 💗 by 星伴团队
+Made with 💗 by lzc
