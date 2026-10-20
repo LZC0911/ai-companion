@@ -4,6 +4,10 @@ node_modules/
 # 配置文件（包含 API Key，不要提交！）
 server/config.json
 
+# SQLite 数据库（包含用户数据，不要提交！）
+server/data.db
+server/data.db-*
+
 # 日志
 *.log
 logs/

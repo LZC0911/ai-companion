@@ -13,6 +13,11 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import db from './db.js';
+import {
+  registerUser, loginUser, getUserByToken, logoutUser,
+  getSubscriptionStatus, redeemCode, generateRedeemCodes
+} from './auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,7 +80,134 @@ const COMPANION_PERSONAS = {
   }
 };
 
-// ============ 路由 ============
+// ============ 中间件：验证用户登录状态 ============
+function requireAuth(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) {
+    return res.status(401).json({ error: '未登录' });
+  }
+
+  const user = getUserByToken(token);
+  if (!user) {
+    return res.status(401).json({ error: '登录已过期，请重新登录' });
+  }
+
+  req.user = user;
+  next();
+}
+
+// ============ 路由：认证相关 ============
+
+// 注册
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: '用户名和密码不能为空' });
+    }
+
+    if (username.length < 3 || username.length > 20) {
+      return res.status(400).json({ error: '用户名长度需为 3-20 个字符' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: '密码长度至少 6 位' });
+    }
+
+    const user = registerUser(username, password);
+    res.json({ ok: true, user: { id: user.id, username: user.username } });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 登录
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: '用户名和密码不能为空' });
+    }
+
+    const result = loginUser(username, password);
+    res.json({
+      ok: true,
+      user: { id: result.id, username: result.username },
+      token: result.token
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 登出
+app.post('/api/auth/logout', requireAuth, (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  logoutUser(token);
+  res.json({ ok: true });
+});
+
+// 获取当前用户信息
+app.get('/api/auth/me', requireAuth, (req, res) => {
+  const subStatus = getSubscriptionStatus(req.user.id);
+  res.json({
+    ok: true,
+    user: { id: req.user.id, username: req.user.username },
+    subscription: subStatus
+  });
+});
+
+// ============ 路由：订阅相关 ============
+
+// 获取订阅状态
+app.get('/api/subscription', requireAuth, (req, res) => {
+  const status = getSubscriptionStatus(req.user.id);
+  res.json({ ok: true, subscription: status });
+});
+
+// 激活卡密
+app.post('/api/subscription/redeem', requireAuth, (req, res) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: '请输入卡密' });
+    }
+
+    const result = redeemCode(req.user.id, code.trim().toUpperCase());
+    res.json({
+      ok: true,
+      message: '激活成功！',
+      subscription: result
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 管理接口：生成卡密（仅供本地使用，无权限验证，生产环境需加管理员认证）
+app.post('/api/admin/generate-codes', (req, res) => {
+  try {
+    const { planType = 'month', count = 10 } = req.body;
+
+    if (!['month', 'year'].includes(planType)) {
+      return res.status(400).json({ error: 'planType 必须是 month 或 year' });
+    }
+
+    if (count < 1 || count > 100) {
+      return res.status(400).json({ error: 'count 必须在 1-100 之间' });
+    }
+
+    const codes = generateRedeemCodes(planType, count);
+    res.json({ ok: true, codes, planType, count: codes.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============ 路由：AI 聊天（需要登录+订阅） ============
 
 // 获取配置（不返回 API Key）
 app.get('/api/config', (req, res) => {
@@ -102,13 +234,23 @@ app.post('/api/config', (req, res) => {
   res.json({ ok: true, hasKey: !!cfg.apiKey });
 });
 
-// 聊天接口
-app.post('/api/chat', async (req, res) => {
+// 聊天接口（需要登录 + 活跃订阅）
+app.post('/api/chat', requireAuth, async (req, res) => {
   try {
     const { messages, companion = 'warm', stream = false } = req.body;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: '消息列表不能为空' });
+    }
+
+    // 检查订阅状态
+    const subStatus = getSubscriptionStatus(req.user.id);
+    if (!subStatus.isActive) {
+      return res.status(403).json({
+        error: '订阅已过期或未激活',
+        hint: '请先激活订阅以继续使用 AI 对话功能',
+        code: 'SUBSCRIPTION_REQUIRED'
+      });
     }
 
     const cfg = runtimeConfig;

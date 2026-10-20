@@ -90,6 +90,26 @@
   .api-status { position:absolute; top:24px; right:70px; font-size:12px; padding:4px 10px; border-radius:12px; font-weight:600; z-index:50; }
   .api-status.ok { background:rgba(184,224,210,0.6); color:#2e7d5a; }
   .api-status.off { background:rgba(255,181,181,0.6); color:#c62828; }
+  /* 用户区域 */
+  .user-area { position:absolute; top:20px; left:20px; display:flex; align-items:center; gap:10px; z-index:50; }
+  .user-btn { padding:8px 16px; background:rgba(255,255,255,0.8); backdrop-filter:blur(8px); border:2px solid var(--peach); border-radius:20px; color:var(--warm-brown); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.3s ease; box-shadow:0 4px 15px rgba(93,64,55,0.1); }
+  .user-btn:hover { background:var(--peach); color:white; transform:translateY(-2px); box-shadow:0 6px 20px rgba(255,154,118,0.3); }
+  .user-info { display:flex; align-items:center; gap:8px; padding:6px 14px; background:rgba(255,255,255,0.8); backdrop-filter:blur(8px); border-radius:20px; box-shadow:0 4px 15px rgba(93,64,55,0.1); }
+  .user-name { font-size:13px; font-weight:600; color:var(--warm-brown); }
+  .sub-badge { font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600; }
+  .sub-badge.active { background:rgba(184,224,210,0.6); color:#2e7d5a; }
+  .sub-badge.inactive { background:rgba(255,181,181,0.6); color:#c62828; }
+  .logout-icon { width:24px; height:24px; border-radius:50%; background:var(--soft-pink); border:none; font-size:12px; cursor:pointer; transition:all 0.2s; }
+  .logout-icon:hover { background:var(--peach); transform:scale(1.1); }
+  /* 认证弹窗 */
+  .auth-tabs { display:flex; gap:8px; margin-bottom:18px; background:var(--cream); padding:4px; border-radius:12px; }
+  .auth-tab { flex:1; padding:8px; border:none; background:transparent; border-radius:8px; font-family:inherit; font-size:14px; font-weight:600; color:var(--warm-gray); cursor:pointer; transition:all 0.2s; }
+  .auth-tab.active { background:white; color:var(--peach-dark); box-shadow:0 2px 8px rgba(255,154,118,0.2); }
+  /* 订阅卡片 */
+  .sub-card { background:linear-gradient(135deg, rgba(255,212,184,0.3), rgba(255,181,181,0.3)); border-radius:16px; padding:16px; margin-bottom:16px; border:2px dashed var(--peach); }
+  .sub-card-title { font-size:14px; font-weight:600; color:var(--warm-brown); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .sub-card-desc { font-size:12px; color:var(--warm-gray); line-height:1.5; }
+  .code-input { text-transform:uppercase; letter-spacing:2px; font-weight:600; text-align:center; font-size:16px; }
   .modal-mask { position:fixed; inset:0; background:rgba(93,64,55,0.4); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; z-index:100; animation:maskIn 0.25s ease-out; }
   .modal-mask.active { display:flex; }
   @keyframes maskIn { from { opacity:0; } to { opacity:1; } }
@@ -131,6 +151,11 @@
 </style>
 </head>
 <body>
+
+<!-- 用户区域 -->
+<div class="user-area" id="userArea">
+  <button class="user-btn" id="authBtn">👤 登录</button>
+</div>
 
 <!-- API 状态 + 设置按钮 -->
 <span class="api-status off" id="apiStatus">⚪ 未连接</span>
@@ -206,7 +231,56 @@
   </div>
 </div>
 
-<!-- 设置弹窗（必须在 script 之前） -->
+<!-- 认证弹窗 -->
+<div class="modal-mask" id="authModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="authTitle">👤 欢迎来到星伴</div>
+      <button class="modal-close" id="authClose">✕</button>
+    </div>
+    <div class="auth-tabs" id="authTabs">
+      <button class="auth-tab active" data-tab="login">登录</button>
+      <button class="auth-tab" data-tab="register">注册</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">用户名</label>
+      <input type="text" class="form-input" id="authUsername" placeholder="3-20 个字符">
+    </div>
+    <div class="form-group">
+      <label class="form-label">密码</label>
+      <input type="password" class="form-input" id="authPassword" placeholder="至少 6 位">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="authSubmitBtn">登录</button>
+    </div>
+  </div>
+</div>
+
+<!-- 订阅激活弹窗 -->
+<div class="modal-mask" id="subModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✨ 激活订阅</div>
+      <button class="modal-close" id="subClose">✕</button>
+    </div>
+    <div class="sub-card">
+      <div class="sub-card-title">🎟️ 激活码使用</div>
+      <div class="sub-card-desc">输入从爱发电 / 面包多 / 淘宝购买的 8 位激活码，即可解锁 AI 对话功能。</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">卡密（8位大写字母+数字）</label>
+      <input type="text" class="form-input code-input" id="redeemCode" placeholder="XXXX-XXXX" maxlength="9">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="redeemBtn">🎉 立即激活</button>
+    </div>
+    <div class="form-group" style="margin-top:12px; text-align:center;">
+      <span class="form-hint">订阅到期后会自动切换到本地模式，已有对话不受影响</span>
+    </div>
+  </div>
+</div>
+
+<!-- 设置弹窗 -->
 <div class="modal-mask" id="settingsModal">
   <div class="modal">
     <div class="modal-header">
@@ -271,6 +345,20 @@
   var messageHistory = [];
   var currentCompanion = 'warm';
   var apiReady = false;
+  var currentUser = null;
+  var subscription = null;
+
+  // ======== Token 管理 ========
+  function getToken() { return localStorage.getItem('auth_token') || ''; }
+  function setToken(t) { localStorage.setItem('auth_token', t); }
+  function clearToken() { localStorage.removeItem('auth_token'); }
+
+  function authFetch(url, options) {
+    options = options || {};
+    options.headers = options.headers || {};
+    if (getToken()) options.headers['Authorization'] = 'Bearer ' + getToken();
+    return fetch(url, options);
+  }
 
   // ======== 漂浮星星 ========
   (function createStars() {
@@ -308,6 +396,166 @@
     ], mood: { emoji: '⭐', text: '我现在的心情：超级闪亮，能量满满！' } }
   };
 
+  // ======== 认证相关函数 ========
+  var authMode = 'login'; // 'login' or 'register'
+
+  function showAuthModal() {
+    var m = $('authModal');
+    if (m) m.classList.add('active');
+  }
+  function hideAuthModal() {
+    var m = $('authModal');
+    if (m) m.classList.remove('active');
+  }
+  function showSubModal() {
+    var m = $('subModal');
+    if (m) m.classList.add('active');
+  }
+  function hideSubModal() {
+    var m = $('subModal');
+    if (m) m.classList.remove('active');
+  }
+
+  function updateUserArea() {
+    var area = $('userArea');
+    if (!area) return;
+
+    if (currentUser) {
+      var subHtml = subscription && subscription.isActive
+        ? '<span class="sub-badge active">订阅中 · ' + (subscription.planType === 'month' ? '月度' : '年度') + '</span>'
+        : '<span class="sub-badge inactive">未订阅</span>';
+
+      area.innerHTML = '<div class="user-info">' +
+        '<span class="user-name">' + escapeHtml(currentUser.username) + '</span>' +
+        subHtml +
+        '<button class="logout-icon" id="logoutBtn" title="登出">✕</button>' +
+      '</div>';
+
+      var lb = $('logoutBtn');
+      if (lb) lb.addEventListener('click', doLogout);
+
+      // 已登录但未订阅，显示激活按钮
+      if (!subscription || !subscription.isActive) {
+        var actBtn = document.createElement('button');
+        actBtn.className = 'user-btn';
+        actBtn.id = 'activateBtn';
+        actBtn.textContent = '💎 激活订阅';
+        actBtn.addEventListener('click', showSubModal);
+        area.appendChild(actBtn);
+      }
+    } else {
+      area.innerHTML = '<button class="user-btn" id="authBtn">👤 登录</button>';
+      var ab = $('authBtn');
+      if (ab) ab.addEventListener('click', showAuthModal);
+    }
+  }
+
+  function doLogout() {
+    authFetch('/api/auth/logout', { method: 'POST' }).then(function() {
+      clearToken();
+      currentUser = null;
+      subscription = null;
+      updateUserArea();
+      toast('已登出，欢迎下次再来 👋');
+    }).catch(function(e) {
+      console.warn('logout error:', e);
+      clearToken();
+      currentUser = null;
+      subscription = null;
+      updateUserArea();
+    });
+  }
+
+  function doAuth() {
+    var un = $('authUsername');
+    var pw = $('authPassword');
+    var username = un ? un.value.trim() : '';
+    var password = pw ? pw.value : '';
+
+    if (!username || !password) { toast('用户名和密码不能为空', true); return; }
+
+    var url = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.ok) {
+        if (authMode === 'login') {
+          setToken(data.token);
+          currentUser = data.user;
+          subscription = data.subscription;
+          toast('欢迎回来，' + data.user.username + '！💕');
+        } else {
+          toast('注册成功！请登录');
+          // 注册后切换到登录 tab
+          authMode = 'login';
+          var tabs = $('authTabs');
+          if (tabs) {
+            tabs.querySelectorAll('.auth-tab').forEach(function(t) { t.classList.remove('active'); });
+            tabs.querySelector('[data-tab="login"]').classList.add('active');
+          }
+          var btn = $('authSubmitBtn'); if (btn) btn.textContent = '登录';
+          return;
+        }
+        hideAuthModal();
+        updateUserArea();
+      } else {
+        toast(data.error || '操作失败', true);
+      }
+    }).catch(function(e) {
+      toast('网络错误：' + e.message, true);
+    });
+  }
+
+  function doRedeem() {
+    var codeEl = $('redeemCode');
+    var code = codeEl ? codeEl.value.trim().toUpperCase() : '';
+    if (!code || code.length < 8) { toast('请输入有效的 8 位卡密', true); return; }
+
+    authFetch('/api/subscription/redeem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.ok) {
+        subscription = data.subscription;
+        updateUserArea();
+        hideSubModal();
+        toast('🎉 激活成功！开始享受 AI 陪伴吧');
+        if (codeEl) codeEl.value = '';
+      } else {
+        toast(data.error || '激活失败', true);
+      }
+    }).catch(function(e) {
+      toast('网络错误：' + e.message, true);
+    });
+  }
+
+  function checkAuthAndSubscription() {
+    var token = getToken();
+    if (!token) {
+      currentUser = null;
+      subscription = null;
+      updateUserArea();
+      return;
+    }
+
+    authFetch('/api/auth/me').then(function(r) {
+      if (r.ok) return r.json();
+      throw new Error('not authenticated');
+    }).then(function(data) {
+      currentUser = data.user;
+      subscription = data.subscription;
+      updateUserArea();
+    }).catch(function(e) {
+      clearToken();
+      currentUser = null;
+      subscription = null;
+      updateUserArea();
+    });
+  }
+
   // ======== 本地兜底回复 ========
   var FALLBACK = {
     tired:  ['哎呀... 抱抱你 🤗 辛苦了。要不先喝杯温水，深呼吸一下？', '好让人心疼... 累了就歇一会吧，什么都不用急。我陪着你呢 🌸'],
@@ -339,7 +587,7 @@
 
   // ======== 调用真实 AI ========
   async function callAI(messages, companion) {
-    var resp = await fetch('/api/chat', {
+    var resp = await authFetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: messages, companion: companion })
@@ -347,6 +595,21 @@
     if (!resp.ok) {
       var err;
       try { err = await resp.json(); } catch(e) { err = {}; }
+
+      // 未登录或登录过期
+      if (resp.status === 401) {
+        clearToken();
+        currentUser = null;
+        subscription = null;
+        updateUserArea();
+        showAuthModal();
+        throw new Error('请先登录');
+      }
+      // 未订阅或订阅过期
+      if (resp.status === 403 && err.code === 'SUBSCRIPTION_REQUIRED') {
+        showSubModal();
+        throw new Error('请先激活订阅');
+      }
       throw new Error(err.error || ('HTTP ' + resp.status));
     }
     var data = await resp.json();
@@ -573,6 +836,44 @@
     }
   }
 
+  // ======== 认证弹窗事件 ========
+  var authModalEl = $('authModal');
+  var btnAuthClose = $('authClose');
+  var btnAuthSubmit = $('authSubmitBtn');
+  var authTabsEl = $('authTabs');
+
+  if (authTabsEl) {
+    authTabsEl.querySelectorAll('.auth-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        authTabsEl.querySelectorAll('.auth-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        authMode = tab.getAttribute('data-tab');
+        var btn = $('authSubmitBtn');
+        if (btn) btn.textContent = authMode === 'login' ? '登录' : '注册';
+      });
+    });
+  }
+  if (btnAuthSubmit) btnAuthSubmit.addEventListener('click', doAuth);
+  if (btnAuthClose) btnAuthClose.addEventListener('click', hideAuthModal);
+  if (authModalEl) {
+    authModalEl.addEventListener('click', function(e) {
+      if (e.target === authModalEl) hideAuthModal();
+    });
+  }
+
+  // ======== 订阅弹窗事件 ========
+  var subModalEl = $('subModal');
+  var btnSubClose = $('subClose');
+  var btnRedeem = $('redeemBtn');
+
+  if (btnRedeem) btnRedeem.addEventListener('click', doRedeem);
+  if (btnSubClose) btnSubClose.addEventListener('click', hideSubModal);
+  if (subModalEl) {
+    subModalEl.addEventListener('click', function(e) {
+      if (e.target === subModalEl) hideSubModal();
+    });
+  }
+
   // ======== 发送事件 ========
   var btnSend = $('sendBtn'), inputMsg = $('messageInput');
   if (btnSend) btnSend.addEventListener('click', function() { if (inputMsg) sendMessage(inputMsg.value); });
@@ -584,6 +885,9 @@
 
   // ======== 初始化 ========
   (async function init() {
+    // 检查登录状态
+    checkAuthAndSubscription();
+
     try {
       var cfgResp = await fetch('/api/config');
       var cfg = await cfgResp.json();
