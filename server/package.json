@@ -1,0 +1,14 @@
+{
+  "name": "ai-companion-server",
+  "version": "1.0.0",
+  "description": "AI 陪伴应用后端代理",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  }
+}

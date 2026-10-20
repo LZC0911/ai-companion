@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星伴 · 你的专属AI陪伴</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --cream: #FFF8F0; --peach: #FFD4B8; --peach-dark: #FF9A76; --rose: #FFB5B5;
+    --lavender: #C7B8EA; --mint: #B8E0D2; --sky: #A8DADC; --warm-brown: #5D4037;
+    --warm-gray: #8D6E63; --soft-pink: #FFE0E0;
+  }
+  body { font-family: 'Quicksand', 'ZCOOL KuaiLe', -apple-system, sans-serif; background: var(--cream); min-height: 100vh; overflow: hidden; position: relative; }
+  .bg-decoration { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; animation: float 20s ease-in-out infinite; }
+  .blob-1 { width: 400px; height: 400px; background: linear-gradient(135deg, var(--peach), var(--rose)); top: -100px; left: -100px; }
+  .blob-2 { width: 350px; height: 350px; background: linear-gradient(135deg, var(--lavender), var(--sky)); bottom: -80px; right: -80px; animation-delay: -7s; }
+  .blob-3 { width: 250px; height: 250px; background: linear-gradient(135deg, var(--mint), var(--peach)); top: 40%; left: 50%; transform: translate(-50%, -50%); animation-delay: -14s; }
+  @keyframes float { 0%, 100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-30px) scale(1.05); } 66% { transform: translate(-20px,20px) scale(0.95); } }
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+  .star { position: absolute; color: var(--peach-dark); opacity: 0.3; animation: twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.3); } }
+  .app-container { position: relative; z-index: 10; max-width: 900px; height: 100vh; margin: 0 auto; display: flex; flex-direction: column; padding: 20px; }
+  .header { text-align: center; padding: 20px 0; animation: slideDown 0.8s ease-out; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+  .header h1 { font-family: 'ZCOOL KuaiLe', cursive; font-size: 32px; color: var(--warm-brown); display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .header h1 .sparkle { font-size: 28px; animation: spin 8s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .header .subtitle { color: var(--warm-gray); font-size: 14px; margin-top: 4px; font-weight: 500; }
+  .companion-selector { display: flex; gap: 12px; justify-content: center; padding: 16px; animation: fadeIn 1s ease-out 0.2s both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .companion-card { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border-radius: 20px; padding: 12px 16px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 80px; box-shadow: 0 4px 15px rgba(255,154,118,0.1); }
+  .companion-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(255,154,118,0.2); }
+  .companion-card.active { border-color: var(--peach-dark); background: rgba(255,212,184,0.4); box-shadow: 0 8px 25px rgba(255,154,118,0.3); }
+  .companion-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .companion-card:nth-child(1) .companion-avatar { background: linear-gradient(135deg, var(--peach), var(--rose)); }
+  .companion-card:nth-child(2) .companion-avatar { background: linear-gradient(135deg, var(--sky), var(--lavender)); }
+  .companion-card:nth-child(3) .companion-avatar { background: linear-gradient(135deg, var(--mint), var(--sky)); }
+  .companion-name { font-size: 13px; font-weight: 600; color: var(--warm-brown); }
+  .chat-area { flex: 1; display: flex; flex-direction: column; background: rgba(255,255,255,0.5); backdrop-filter: blur(15px); border-radius: 30px; overflow: hidden; box-shadow: 0 20px 60px rgba(93,64,55,0.1); animation: slideUp 0.8s ease-out 0.3s both; border: 1px solid rgba(255,255,255,0.6); }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  .ai-header { background: linear-gradient(135deg, rgba(255,212,184,0.6), rgba(255,181,181,0.6)); padding: 16px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.5); }
+  .ai-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--peach), var(--peach-dark)); display: flex; align-items: center; justify-content: center; font-size: 28px; position: relative; animation: breathe 3s ease-in-out infinite; box-shadow: 0 4px 15px rgba(255,154,118,0.3); }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .ai-avatar::after { content:''; position:absolute; bottom:2px; right:2px; width:14px; height:14px; background:var(--mint); border-radius:50%; border:3px solid white; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(184,224,210,0.7); } 50% { box-shadow:0 0 0 8px rgba(184,224,210,0); } }
+  .ai-info h2 { font-family: 'ZCOOL KuaiLe', cursive; font-size: 20px; color: var(--warm-brown); }
+  .ai-info .status { font-size: 12px; color: var(--warm-gray); font-weight: 500; }
+  .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .messages::-webkit-scrollbar { width: 6px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--peach); border-radius: 3px; }
+  .message { max-width: 75%; display: flex; gap: 10px; animation: messageIn 0.4s ease-out; }
+  @keyframes messageIn { from { opacity:0; transform: translateY(10px) scale(0.95); } to { opacity:1; transform: translateY(0) scale(1); } }
+  .message.user { align-self: flex-end; flex-direction: row-reverse; }
+  .message-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .message.bot .message-avatar { background: linear-gradient(135deg, var(--peach), var(--rose)); }
+  .message.user .message-avatar { background: linear-gradient(135deg, var(--sky), var(--lavender)); }
+  .bubble { padding:14px 18px; border-radius:20px; font-size:15px; line-height:1.6; font-weight:500; position:relative; word-break: break-word; }
+  .message.bot .bubble { background:white; color:var(--warm-brown); border-bottom-left-radius:8px; box-shadow:0 4px 15px rgba(93,64,55,0.08); }
+  .message.user .bubble { background: linear-gradient(135deg, var(--peach), var(--peach-dark)); color:white; border-bottom-right-radius:8px; box-shadow:0 4px 15px rgba(255,154,118,0.3); }
+  .typing-indicator { display:none; gap:4px; padding:14px 18px; background:white; border-radius:20px; border-bottom-left-radius:8px; box-shadow:0 4px 15px rgba(93,64,55,0.08); align-items:center; }
+  .typing-indicator.active { display:flex; }
+  .typing-dot { width:8px; height:8px; background:var(--peach-dark); border-radius:50%; animation:typing 1.4s ease-in-out infinite; }
+  .typing-dot:nth-child(2) { animation-delay:0.2s; }
+  .typing-dot:nth-child(3) { animation-delay:0.4s; }
+  @keyframes typing { 0%,60%,100% { transform:translateY(0); opacity:0.4; } 30% { transform:translateY(-8px); opacity:1; } }
+  .quick-actions { display:flex; gap:8px; padding:12px 20px; flex-wrap:wrap; justify-content:center; }
+  .quick-btn { padding:8px 16px; background:rgba(255,255,255,0.8); border:2px solid var(--peach); border-radius:20px; color:var(--warm-brown); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.3s ease; }
+  .quick-btn:hover { background:var(--peach); color:white; transform:scale(1.05); }
+  .quick-btn:active { transform:scale(0.95); }
+  .input-area { padding:16px 20px; background:rgba(255,255,255,0.7); display:flex; gap:12px; align-items:center; }
+  .input-wrapper { flex:1; position:relative; }
+  .message-input { width:100%; padding:14px 50px 14px 20px; border:none; border-radius:25px; background:white; font-family:inherit; font-size:15px; font-weight:500; color:var(--warm-brown); outline:none; box-shadow:0 4px 20px rgba(93,64,55,0.08); transition:box-shadow 0.3s ease; }
+  .message-input:focus { box-shadow:0 4px 25px rgba(255,154,118,0.25); }
+  .message-input::placeholder { color:var(--warm-gray); }
+  .send-btn { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:38px; height:38px; border:none; border-radius:50%; background: linear-gradient(135deg, var(--peach), var(--peach-dark)); color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.3s ease; box-shadow:0 4px 15px rgba(255,154,118,0.4); }
+  .send-btn:hover { transform:translateY(-50%) scale(1.1); box-shadow:0 6px 20px rgba(255,154,118,0.5); }
+  .send-btn:active { transform:translateY(-50%) scale(0.95); }
+  .send-btn svg { width:18px; height:18px; }
+  .mood-card { background: linear-gradient(135deg, rgba(199,184,234,0.4), rgba(168,218,220,0.4)); padding:12px 16px; border-radius:16px; margin:0 20px 12px; display:flex; align-items:center; gap:10px; animation:fadeIn 0.8s ease-out 0.5s both; }
+  .mood-emoji { font-size:24px; animation:bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
+  .mood-text { font-size:13px; color:var(--warm-brown); font-weight:600; }
+  .settings-btn { position:absolute; top:20px; right:20px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.8); backdrop-filter:blur(8px); border:none; font-size:20px; cursor:pointer; transition:all 0.3s ease; box-shadow:0 4px 15px rgba(93,64,55,0.1); z-index:50; }
+  .settings-btn:hover { transform:rotate(45deg) scale(1.1); box-shadow:0 6px 20px rgba(255,154,118,0.3); }
+  .api-status { position:absolute; top:24px; right:70px; font-size:12px; padding:4px 10px; border-radius:12px; font-weight:600; z-index:50; }
+  .api-status.ok { background:rgba(184,224,210,0.6); color:#2e7d5a; }
+  .api-status.off { background:rgba(255,181,181,0.6); color:#c62828; }
+  .modal-mask { position:fixed; inset:0; background:rgba(93,64,55,0.4); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; z-index:100; animation:maskIn 0.25s ease-out; }
+  .modal-mask.active { display:flex; }
+  @keyframes maskIn { from { opacity:0; } to { opacity:1; } }
+  .modal { width:min(440px, 92vw); background:white; border-radius:28px; padding:28px; box-shadow:0 20px 60px rgba(93,64,55,0.25); animation:modalPop 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes modalPop { from { transform:scale(0.85) translateY(20px); opacity:0; } to { transform:scale(1) translateY(0); opacity:1; } }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .modal-title { font-family:'ZCOOL KuaiLe', cursive; font-size:22px; color:var(--warm-brown); }
+  .modal-close { width:32px; height:32px; border-radius:50%; border:none; background:var(--cream); font-size:16px; cursor:pointer; transition:all 0.2s; }
+  .modal-close:hover { background:var(--peach); transform:rotate(90deg); }
+  .form-group { margin-bottom:14px; }
+  .form-label { display:block; font-size:13px; font-weight:600; color:var(--warm-brown); margin-bottom:6px; }
+  .form-input { width:100%; padding:12px 14px; border:2px solid var(--soft-pink); border-radius:14px; font-family:inherit; font-size:14px; color:var(--warm-brown); background:var(--cream); outline:none; transition:border-color 0.2s; }
+  .form-input:focus { border-color:var(--peach-dark); }
+  .form-hint { font-size:12px; color:var(--warm-gray); margin-top:4px; line-height:1.5; }
+  .preset-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .preset-chip { padding:6px 12px; background:var(--cream); border:1px solid var(--peach); border-radius:14px; font-size:12px; font-weight:600; color:var(--warm-brown); cursor:pointer; transition:all 0.2s; }
+  .preset-chip:hover { background:var(--peach); color:white; }
+  .btn-row { display:flex; gap:10px; margin-top:20px; }
+  .btn { flex:1; padding:12px; border-radius:14px; border:none; font-family:inherit; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, var(--peach), var(--peach-dark)); color:white; box-shadow:0 4px 15px rgba(255,154,118,0.4); }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(255,154,118,0.5); }
+  .btn-ghost { background:var(--cream); color:var(--warm-brown); }
+  .btn-ghost:hover { background:var(--soft-pink); }
+  .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px); padding:12px 22px; background:var(--warm-brown); color:white; border-radius:20px; font-size:14px; font-weight:500; z-index:200; box-shadow:0 6px 25px rgba(0,0,0,0.2); transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+  .toast.error { background:#c62828; }
+  @media (max-width:600px) {
+    .app-container { padding:10px; }
+    .header h1 { font-size:26px; }
+    .companion-selector { gap:8px; padding:12px; }
+    .companion-card { min-width:70px; padding:10px 12px; }
+    .chat-area { border-radius:24px; }
+    .ai-header { padding:12px 16px; }
+    .ai-avatar { width:48px; height:48px; font-size:24px; }
+    .message { max-width:85%; }
+    .bubble { padding:12px 14px; font-size:14px; }
+    .quick-btn { font-size:12px; padding:6px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- API 状态 + 设置按钮 -->
+<span class="api-status off" id="apiStatus">⚪ 未连接</span>
+<button class="settings-btn" id="settingsBtn" title="AI 设置">⚙️</button>
+
+<div class="bg-decoration">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="stars" id="starsContainer"></div>
+
+<div class="app-container">
+  <header class="header">
+    <h1><span class="sparkle">✨</span> 星伴 <span class="sparkle">✨</span></h1>
+    <p class="subtitle">你的专属AI陪伴 · 一直在你身边</p>
+  </header>
+
+  <div class="companion-selector" id="companionSelector">
+    <div class="companion-card active" data-companion="warm">
+      <div class="companion-avatar">🌷</div><span class="companion-name">小暖</span>
+    </div>
+    <div class="companion-card" data-companion="calm">
+      <div class="companion-avatar">🌙</div><span class="companion-name">小安</span>
+    </div>
+    <div class="companion-card" data-companion="fun">
+      <div class="companion-avatar">⭐</div><span class="companion-name">小星星</span>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="ai-header">
+      <div class="ai-avatar" id="aiAvatar">🌷</div>
+      <div class="ai-info">
+        <h2 id="aiName">小暖</h2>
+        <p class="status" id="aiStatusText">在线 · 正在陪你 ✨</p>
+      </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="typing-indicator" id="typingIndicator">
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+    </div>
+
+    <div class="mood-card">
+      <span class="mood-emoji" id="moodEmoji">💗</span>
+      <span class="mood-text" id="moodText">我现在的心情：开心，因为你来了！</span>
+    </div>
+
+    <div class="quick-actions" id="quickActions">
+      <button class="quick-btn" data-action="how">今天还好吗？</button>
+      <button class="quick-btn" data-action="tired">好累呀 😮‍💨</button>
+      <button class="quick-btn" data-action="happy">今天超开心！</button>
+      <button class="quick-btn" data-action="late">睡不着呢 🌙</button>
+      <button class="quick-btn" data-action="hug">想要个抱抱 🤗</button>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <input type="text" class="message-input" id="messageInput" placeholder="跟我说说你的心情... 💭">
+        <button class="send-btn" id="sendBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 设置弹窗（必须在 script 之前） -->
+<div class="modal-mask" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✨ AI 设置</div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">快速选择服务商</label>
+      <div class="preset-row" id="presetRow">
+        <span class="preset-chip" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">DeepSeek</span>
+        <span class="preset-chip" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-plus">通义</span>
+        <span class="preset-chip" data-base="https://open.bigmodel.cn/api/paas/v4" data-model="glm-4-flash">智谱</span>
+        <span class="preset-chip" data-base="https://api.moonshot.cn/v1" data-model="moonshot-v1-8k">Kimi</span>
+        <span class="preset-chip" data-base="https://api.openai.com/v1" data-model="gpt-4o-mini">OpenAI</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">API 服务地址 (Base URL)</label>
+      <input type="text" class="form-input" id="baseUrl" placeholder="https://api.deepseek.com/v1">
+      <div class="form-hint">OpenAI 兼容接口的 v1 前缀</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <input type="password" class="form-input" id="apiKey" placeholder="sk-... (密钥只保存在后端服务器)">
+      <div class="form-hint">Key 发送到本地代理，不暴露在浏览器</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">模型名称 (Model)</label>
+      <input type="text" class="form-input" id="modelName" placeholder="deepseek-chat">
+      <div class="form-hint">选好服务商后会自动填入</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="testBtn">🔌 测试连接</button>
+      <button class="btn btn-primary" id="saveBtn">💾 保存设置</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 所有 DOM 都在上面了，script 最后执行 -->
+<script>
+(function() {
+  'use strict';
+
+  // ======== 配置 ========
+  var API_BASE = '';  // Express 同端口，相对路径即可
+
+  // ======== 工具 ========
+  function $(id) { return document.getElementById(id); }
+  function toast(msg, isError) {
+    var t = $('toast');
+    if (!t) { console.warn('toast element not found'); return; }
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '') + ' show';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function() { t.className = 'toast'; }, 2500);
+  }
+
+  // ======== 状态 ========
+  var messageHistory = [];
+  var currentCompanion = 'warm';
+  var apiReady = false;
+
+  // ======== 漂浮星星 ========
+  (function createStars() {
+    var container = $('starsContainer');
+    if (!container) return;
+    var emojis = ['✨', '⭐', '💫', '🌸', '🌙', '☀️'];
+    for (var i = 0; i < 20; i++) {
+      var star = document.createElement('div');
+      star.className = 'star';
+      star.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.animationDelay = Math.random() * 4 + 's';
+      star.style.fontSize = (10 + Math.random() * 10) + 'px';
+      container.appendChild(star);
+    }
+  })();
+
+  // ======== 陪伴者配置 ========
+  var companions = {
+    warm: { name: '小暖', avatar: '🌷', greetings: [
+      '嗨~ 今天过得怎么样呀？我是小暖，专门来陪你聊天的 🌸 有什么想跟我说的吗？',
+      '回来啦！等你好久了~ 今天开心吗？💕',
+      '呀，你来啦！小暖在这里呢~ 今天想聊点什么？🌷'
+    ], mood: { emoji: '💗', text: '我现在的心情：好温暖，因为有你' } },
+    calm: { name: '小安', avatar: '🌙', greetings: [
+      '你好呀，我是小安 🌙 今晚的月光很美... 有什么想倾诉的吗？',
+      '嘘~ 我在呢。今天辛苦了，好好放松一下吧 🌙',
+      '嗯~ 我在听。任何烦恼都可以慢慢说，不急的 🌙'
+    ], mood: { emoji: '🌙', text: '我现在的心情：宁静如水，温柔陪伴' } },
+    fun: { name: '小星星', avatar: '⭐', greetings: [
+      '哇塞！你来啦来啦~ 我是最闪亮的小星星 ⭐ 今天想玩点什么？',
+      '嘿！朋友！⭐⭐⭐ 今天也是元气满满的一天！有什么好玩的要分享吗？',
+      '叮咚~ 星星来报到啦！✨✨ 快说快说，今天有啥新鲜事？'
+    ], mood: { emoji: '⭐', text: '我现在的心情：超级闪亮，能量满满！' } }
+  };
+
+  // ======== 本地兜底回复 ========
+  var FALLBACK = {
+    tired:  ['哎呀... 抱抱你 🤗 辛苦了。要不先喝杯温水，深呼吸一下？', '好让人心疼... 累了就歇一会吧，什么都不用急。我陪着你呢 🌸'],
+    happy:  ['哇！我也跟着开心起来了！✨✨ 是什么好事呀？', '耶耶耶~ 你的快乐感染到我啦！🎉'],
+    late:   ['睡不着吗？我陪你呢 🌙 要不我给你讲个小故事？', '深夜总是容易想太多呢。没关系，我陪着你~'],
+    hug:    ['抱抱抱抱 🤗🤗🤗 软软暖暖的那种！', '来！抱住~ 💗 我把所有温暖都传给你！'],
+    sad:    ['小可怜... 让我好好抱抱你 🤗 想哭就哭出来，我会一直在的 💗', '我懂那种难受... 你不是一个人，我在这里。'],
+    stress: ['压力好大哦... 太辛苦了 🌸 先闭上眼睛深呼吸三次？你已经很棒了！'],
+    thanks: ['不客气~ 能陪着你是我的小确幸呀 💗', '嘿嘿，不用谢！有我在呢~'],
+    bye:    ['好的~ 记得要开心哦！我会一直在这里等你回来的 💗 下次见啦~'],
+    hi:     ['在呢在呢~ 我一直都在呀 🌸 今天想聊点什么？'],
+    default: ['嗯嗯~ 我听到啦，继续说嘛 🌷', '原来是这样呀~ 我在认真听哦 💕', '谢谢你愿意跟我说这些~ 我好开心呀 🌸']
+  };
+
+  function localReply(userText) {
+    var t = (userText || '').toLowerCase();
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    if (/累|好累|疲惫|困|辛苦/.test(t))  return pick(FALLBACK.tired);
+    if (/开心|高兴|快乐|好棒|太棒|哈哈|嘿嘿|嘻嘻|耶/.test(t)) return pick(FALLBACK.happy);
+    if (/睡|睡不着|失眠|深夜|晚安/.test(t)) return pick(FALLBACK.late);
+    if (/抱|抱抱|抱一下/.test(t)) return pick(FALLBACK.hug);
+    if (/难过|伤心|不开心|郁闷|烦|委屈|哭|想哭|emo/.test(t)) return pick(FALLBACK.sad);
+    if (/压力|工作|学习|考试|紧张/.test(t)) return pick(FALLBACK.stress);
+    if (/谢谢|感谢|thanks|thank you/i.test(t)) return pick(FALLBACK.thanks);
+    if (/再见|拜拜|bye|下次/.test(t)) return pick(FALLBACK.bye);
+    if (/你好|hi|hello|在吗|嗨|哈喽/.test(t)) return pick(FALLBACK.hi);
+    return pick(FALLBACK.default);
+  }
+
+  // ======== 调用真实 AI ========
+  async function callAI(messages, companion) {
+    var resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messages, companion: companion })
+    });
+    if (!resp.ok) {
+      var err;
+      try { err = await resp.json(); } catch(e) { err = {}; }
+      throw new Error(err.error || ('HTTP ' + resp.status));
+    }
+    var data = await resp.json();
+    return data.content || '（AI 没有回复内容...）';
+  }
+
+  // ======== 消息渲染 ========
+  function getCurrentCompanion() { return companions[currentCompanion] || companions.warm; }
+
+  function addBotMessage(text) {
+    var messagesDiv = $('messages');
+    if (!messagesDiv) return;
+    var c = getCurrentCompanion();
+    var msgDiv = document.createElement('div');
+    msgDiv.className = 'message bot';
+    msgDiv.innerHTML = '<div class="message-avatar">' + c.avatar + '</div><div class="bubble"></div>';
+    var bubble = msgDiv.querySelector('.bubble');
+    messagesDiv.appendChild(msgDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    typeWriter(bubble, text, messagesDiv);
+    updateMood(text);
+  }
+
+  function addUserMessage(text) {
+    var messagesDiv = $('messages');
+    if (!messagesDiv) return;
+    var msgDiv = document.createElement('div');
+    msgDiv.className = 'message user';
+    msgDiv.innerHTML = '<div class="message-avatar">😊</div><div class="bubble">' + escapeHtml(text) + '</div>';
+    messagesDiv.appendChild(msgDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  function typeWriter(el, text, scrollBox) {
+    el.textContent = '';
+    var i = 0;
+    var speed = Math.max(15, 50 - Math.floor(text.length / 15));
+    function tick() {
+      if (i < text.length) {
+        el.textContent += text[i++];
+        scrollBox.scrollTop = scrollBox.scrollHeight;
+        setTimeout(tick, speed);
+      }
+    }
+    tick();
+  }
+
+  function showTyping() {
+    var t = $('typingIndicator');
+    if (t) t.classList.add('active');
+  }
+  function hideTyping() {
+    var t = $('typingIndicator');
+    if (t) t.classList.remove('active');
+  }
+
+  function updateMood(lastText) {
+    var c = getCurrentCompanion();
+    var t = (lastText || '').toLowerCase();
+    var emoji = $('moodEmoji'), text = $('moodText');
+    if (!emoji || !text) return;
+    if (/累|疲惫|难过|伤心|烦|委屈|emo/.test(t)) {
+      emoji.textContent = '🤗'; text.textContent = '我现在的心情：好心疼，想给你大大的拥抱';
+    } else if (/开心|高兴|快乐|好棒|哈哈/.test(t)) {
+      emoji.textContent = '✨'; text.textContent = '我现在的心情：跟着你一起开心，好幸福！';
+    } else if (/睡|深夜|晚安/.test(t)) {
+      emoji.textContent = '🌙'; text.textContent = '我现在的心情：安安静静，陪你到天亮';
+    } else {
+      emoji.textContent = c.mood.emoji; text.textContent = c.mood.text;
+    }
+  }
+
+  // ======== 发送消息 ========
+  async function sendMessage(text) {
+    text = (text || '').trim();
+    if (!text) return;
+    addUserMessage(text);
+    var input = $('messageInput');
+    if (input) input.value = '';
+    messageHistory.push({ role: 'user', content: text });
+    showTyping();
+
+    var reply;
+    try {
+      reply = await callAI(messageHistory.slice(), currentCompanion);
+    } catch (err) {
+      console.warn('[AI 调用失败，降级本地]:', err.message);
+      reply = localReply(text);
+      toast('AI 未连接，先用本地回复 ⚠️', true);
+    }
+
+    hideTyping();
+    if (reply.length > 400) reply = reply.slice(0, 400) + '...';
+    messageHistory.push({ role: 'assistant', content: reply });
+    if (messageHistory.length > 20) messageHistory = messageHistory.slice(-12);
+    addBotMessage(reply);
+  }
+
+  // ======== 陪伴者切换 ========
+  document.querySelectorAll('.companion-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      document.querySelectorAll('.companion-card').forEach(function(c) { c.classList.remove('active'); });
+      card.classList.add('active');
+      currentCompanion = card.getAttribute('data-companion') || 'warm';
+      var c = getCurrentCompanion();
+      var av = $('aiAvatar'), nm = $('aiName');
+      if (av) av.textContent = c.avatar;
+      if (nm) nm.textContent = c.name;
+      updateStatusBadge();
+      messageHistory = [];
+      setTimeout(function() {
+        var md = $('messages'); if (md) md.innerHTML = '';
+        addBotMessage(c.greetings[Math.floor(Math.random() * c.greetings.length)]);
+      }, 300);
+    });
+  });
+
+  // ======== 设置面板 ========
+  var modalEl = $('settingsModal');
+  var btnSettings = $('settingsBtn');
+  var btnModalClose = $('modalClose');
+  var btnSave = $('saveBtn');
+  var btnTest = $('testBtn');
+  var presetRow = $('presetRow');
+
+  if (btnSettings && modalEl) {
+    btnSettings.addEventListener('click', async function() {
+      try {
+        var resp = await fetch('/api/config');
+        var cfg = await resp.json();
+        var bu = $('baseUrl'), mn = $('modelName');
+        if (bu) bu.value = cfg.baseUrl || '';
+        if (mn) mn.value = cfg.model || '';
+        var ak = $('apiKey'); if (ak) ak.value = '';
+        apiReady = !!cfg.hasKey;
+        updateStatusBadge();
+      } catch (e) {
+        toast('后端请求失败：' + e.message, true);
+      }
+      modalEl.classList.add('active');
+    });
+  }
+  if (btnModalClose && modalEl) {
+    btnModalClose.addEventListener('click', function() { modalEl.classList.remove('active'); });
+  }
+  if (modalEl) {
+    modalEl.addEventListener('click', function(e) {
+      if (e.target === modalEl) modalEl.classList.remove('active');
+    });
+  }
+
+  if (presetRow) {
+    presetRow.querySelectorAll('.preset-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        var bu = $('baseUrl'), mn = $('modelName');
+        if (bu) bu.value = chip.getAttribute('data-base') || '';
+        if (mn) mn.value = chip.getAttribute('data-model') || '';
+        toast('已选择 ' + chip.textContent + '，记得填 Key ~');
+      });
+    });
+  }
+
+  if (btnSave) {
+    btnSave.addEventListener('click', async function() {
+      var bu = $('baseUrl'), mn = $('modelName'), ak = $('apiKey');
+      var baseUrl = bu ? bu.value.trim() : '';
+      var model = mn ? mn.value.trim() : '';
+      var apiKey = ak ? ak.value.trim() : '';
+      if (!baseUrl || !model) { toast('服务地址和模型名不能为空', true); return; }
+      try {
+        var resp = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: apiKey, baseUrl: baseUrl, model: model })
+        });
+        var data = await resp.json();
+        apiReady = !!data.hasKey;
+        updateStatusBadge();
+        toast(apiReady ? '✨ 设置保存成功！' : '服务地址和模型已保存，还可以填 Key');
+        if (apiReady && modalEl) modalEl.classList.remove('active');
+      } catch (e) {
+        toast('保存失败：' + e.message, true);
+      }
+    });
+  }
+
+  if (btnTest) {
+    btnTest.addEventListener('click', async function() {
+      try {
+        var cfgResp = await fetch('/api/config').then(function(r) { return r.json(); });
+        if (!cfgResp.hasKey) { toast('先填 API Key 并保存', true); return; }
+        toast('正在发送测试消息...');
+        var resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: '你好，请用一句话自我介绍' }],
+            companion: currentCompanion
+          })
+        });
+        var data = await resp.json();
+        if (resp.ok) { apiReady = true; updateStatusBadge(); toast('✅ AI 连接成功！'); }
+        else { toast('❌ ' + (data.error || '连接失败'), true); }
+      } catch (e) { toast('❌ 测试失败：' + e.message, true); }
+    });
+  }
+
+  function updateStatusBadge() {
+    var c = getCurrentCompanion();
+    var el = $('apiStatus');
+    if (!el) return;
+    if (apiReady) {
+      el.className = 'api-status ok';
+      el.textContent = '🟢 在线 · ' + c.name + '陪你';
+    } else {
+      el.className = 'api-status off';
+      el.textContent = '⚪ ' + c.name + ' · 本地模式';
+    }
+  }
+
+  // ======== 发送事件 ========
+  var btnSend = $('sendBtn'), inputMsg = $('messageInput');
+  if (btnSend) btnSend.addEventListener('click', function() { if (inputMsg) sendMessage(inputMsg.value); });
+  if (inputMsg) inputMsg.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendMessage(e.target.value); });
+
+  document.querySelectorAll('.quick-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { sendMessage(btn.getAttribute('data-action') || ''); });
+  });
+
+  // ======== 初始化 ========
+  (async function init() {
+    try {
+      var cfgResp = await fetch('/api/config');
+      var cfg = await cfgResp.json();
+      apiReady = !!cfg.hasKey;
+    } catch (e) { /* 后端不可用也没关系，降级 */ }
+
+    updateStatusBadge();
+
+    setTimeout(function() {
+      var md = $('messages'); if (md) md.innerHTML = '';
+      var c = getCurrentCompanion();
+      addBotMessage(c.greetings[Math.floor(Math.random() * c.greetings.length)]);
+    }, 500);
+  })();
+})();
+</script>
+</body>
+</html>
