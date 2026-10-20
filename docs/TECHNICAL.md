@@ -552,9 +552,9 @@ fun2: {
 
 ## 联系方式
 
-- GitHub Issues: [提交问题](https://github.com/你的用户名/ai-companion/issues)
-- Email: your@email.com
+- GitHub Issues: [提交问题](https://github.com/LZC0911/ai-companion/issues)
+
 
 ---
 
-Made with 💗 by 星伴团队
+Made with 💗 by lzc
